@@ -12,7 +12,6 @@ const rl = readline.createInterface({
 });
 
 request(URL, (error, response, body) => {
-  // Print the error if one occurred
   if (error) {
     console.log("error:", error);
   }
@@ -21,22 +20,34 @@ request(URL, (error, response, body) => {
     console.log("Invalid URL!");
     process.exit();
   }
+  // Check if file exists. Returns error if it *doesn't*
   fs.access(path, fs.F_OK, (err) => {
     if (err) {
-      fs.writeFile(path, body, (err) => {
-        if (err) {
-          if (err.errno === -2) {
-            console.log("Invalid path!");
-          }
+      writeAndExit(path, body);
+    } else {
+      // User prompt: overwrite or not
+      rl.question("File already exists! Overwrite? (Y/N)  ", (answer) => {
+        if (answer.toLowerCase() === "y") {
+          writeAndExit(path, body);
+        }
+        if (answer.toLowerCase() === "n") {
+          console.log("you said na");
           process.exit();
         }
-        console.log(`Downloaded and saved ${body.length} bytes to ${path}`);
       });
-    } else {
-      console.log("File already exists! Overwrite? Y/N");
-      process.exit();
     }
-    // return;
-    // Write the file to given path
   });
 });
+
+const writeAndExit = (path, body) => {
+  fs.writeFile(path, body, (err) => {
+    if (err) {
+      if (err.errno === -2) {
+        console.log("Invalid path!");
+      }
+      process.exit();
+    }
+    console.log(`Downloaded and saved ${body.length} bytes to ${path}`);
+    process.exit();
+  });
+};
